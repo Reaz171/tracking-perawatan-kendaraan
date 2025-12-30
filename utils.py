@@ -4,14 +4,13 @@ import qrcode
 from datetime import datetime
 import plotly.express as px
 import plotly.graph_objects as go
+from PIL import Image
+from pyzbar.pyzbar import decode
+import io
 
 # ===== FUNGSI 1: LOAD DATA =====
 def load_data(file_path):
-    """
-    Membaca data dari file CSV
-    Parameter: file_path (string) - path file CSV
-    Return: DataFrame pandas
-    """
+
     try:
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
@@ -36,13 +35,7 @@ def load_data(file_path):
 
 # ===== FUNGSI 2: SAVE DATA =====
 def save_data(file_path, dataframe):
-    """
-    Menyimpan DataFrame ke file CSV
-    Parameter: 
-        - file_path (string): path file CSV
-        - dataframe (DataFrame): data yang akan disimpan
-    Return: Boolean (True jika sukses)
-    """
+
     try:
         dataframe.to_csv(file_path, index=False)
         return True
@@ -52,13 +45,7 @@ def save_data(file_path, dataframe):
 
 # ===== FUNGSI 3: ADD VEHICLE (CREATE) =====
 def add_vehicle(file_path, vehicle_data):
-    """
-    Menambah data kendaraan baru (CREATE)
-    Parameter:
-        - file_path (string): path file CSV
-        - vehicle_data (dict): dictionary berisi data kendaraan
-    Return: Boolean (True jika sukses)
-    """
+
     try:
         df = load_data(file_path)
         
@@ -223,13 +210,7 @@ def generate_qr_code(plat_nomor):
 
 # ===== FUNGSI 9: GET TOTAL STATS =====
 def get_total_stats(df_vehicles, df_services):
-    """
-    Menghitung statistik total untuk dashboard
-    Parameter:
-        - df_vehicles (DataFrame): data kendaraan
-        - df_services (DataFrame): data servis
-    Return: dict berisi statistik
-    """
+
     try:
         total_vehicles = len(df_vehicles) if not df_vehicles.empty else 0
         total_services = len(df_services) if not df_services.empty else 0
@@ -262,11 +243,7 @@ def get_total_stats(df_vehicles, df_services):
 
 # ===== FUNGSI 10: CREATE SERVICE CHART =====
 def create_service_chart(df_services):
-    """
-    Membuat grafik jumlah servis per kendaraan
-    Parameter: df_services (DataFrame)
-    Return: plotly figure
-    """
+
     try:
         if df_services.empty:
             fig = go.Figure()
@@ -304,11 +281,7 @@ def create_service_chart(df_services):
 
 # ===== FUNGSI 11: CREATE COST CHART =====
 def create_cost_chart(df_services):
-    """
-    Membuat grafik total biaya per jenis servis
-    Parameter: df_services (DataFrame)
-    Return: plotly figure
-    """
+
     try:
         if df_services.empty:
             fig = go.Figure()
@@ -344,14 +317,7 @@ def create_cost_chart(df_services):
 
 # ===== FUNGSI 12: FILTER BY DATE =====
 def filter_by_date(df_services, start_date, end_date):
-    """
-    Filter data servis berdasarkan rentang tanggal
-    Parameter:
-        - df_services (DataFrame): data servis
-        - start_date (string): tanggal mulai (YYYY-MM-DD)
-        - end_date (string): tanggal akhir (YYYY-MM-DD)
-    Return: DataFrame yang sudah difilter
-    """
+
     try:
         if df_services.empty:
             return df_services
@@ -368,13 +334,7 @@ def filter_by_date(df_services, start_date, end_date):
 
 # ===== FUNGSI 13: SEARCH VEHICLE =====
 def search_vehicle(df_vehicles, search_term):
-    """
-    Mencari kendaraan berdasarkan plat nomor, merk, atau model
-    Parameter:
-        - df_vehicles (DataFrame): data kendaraan
-        - search_term (string): kata kunci pencarian
-    Return: DataFrame hasil pencarian
-    """
+
     try:
         if df_vehicles.empty or not search_term:
             return df_vehicles
@@ -394,13 +354,7 @@ def search_vehicle(df_vehicles, search_term):
 
 # ===== FUNGSI 14: EXPORT TO EXCEL =====
 def export_to_excel(df_vehicles, df_services):
-    """
-    Export data ke file Excel dengan multiple sheets
-    Parameter:
-        - df_vehicles (DataFrame): data kendaraan
-        - df_services (DataFrame): data servis
-    Return: string (path file Excel)
-    """
+
     try:
         file_name = f"laporan_kendaraan_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         file_path = f"data/{file_name}"
@@ -434,11 +388,7 @@ def export_to_excel(df_vehicles, df_services):
 
 # ===== FUNGSI 15: VALIDATE VEHICLE DATA =====
 def validate_vehicle_data(vehicle_data):
-    """
-    Validasi data kendaraan sebelum disimpan
-    Parameter: vehicle_data (dict)
-    Return: tuple (Boolean, string message)
-    """
+
     try:
         # Cek field wajib
         required_fields = ['plat_nomor', 'merk', 'model', 'tahun']
@@ -463,11 +413,7 @@ def validate_vehicle_data(vehicle_data):
 
 # ===== FUNGSI 16: VALIDATE SERVICE DATA =====
 def validate_service_data(service_data):
-    """
-    Validasi data servis sebelum disimpan
-    Parameter: service_data (dict)
-    Return: tuple (Boolean, string message)
-    """
+
     try:
         # Cek field wajib
         required_fields = ['plat_nomor', 'tanggal', 'jenis_servis', 'biaya']
@@ -490,3 +436,24 @@ def validate_service_data(service_data):
         return True, "Data valid"
     except Exception as e:
         return False, f"Error validasi: {str(e)}"
+
+# ===== FUNGSI 17: DECODE QR FROM IMAGE =====
+def decode_qr_from_image(uploaded_file):
+
+    try:
+        # Baca image
+        image = Image.open(uploaded_file)
+        
+        # Decode QR Code
+        decoded_objects = decode(image)
+        
+        # Ambil data dari QR pertama yang ditemukan
+        if decoded_objects:
+            qr_data = decoded_objects[0].data.decode('utf-8')
+            return qr_data
+        else:
+            return None
+            
+    except Exception as e:
+        print(f"Error decoding QR: {e}")
+        return None

@@ -7,7 +7,8 @@ from utils import (
     delete_vehicle, add_service, get_vehicle_services,
     generate_qr_code, get_total_stats, create_service_chart,
     create_cost_chart, filter_by_date, search_vehicle,
-    export_to_excel, validate_vehicle_data, validate_service_data
+    export_to_excel, validate_vehicle_data, validate_service_data,
+    decode_qr_from_image
 )
 
 # Konfigurasi halaman
@@ -30,6 +31,8 @@ SERVICE_FILE = 'data/service_log.csv'
 # Inisialisasi session state
 if 'current_page' not in st.session_state:
     st.session_state.current_page = 'Dashboard'
+if 'scanned_plat' not in st.session_state:
+    st.session_state.scanned_plat = None
 
 # Sidebar Menu
 st.sidebar.title("🚗 Menu Navigasi")
@@ -163,22 +166,24 @@ elif menu == 'Data Kendaraan':
                     else:
                         success = add_vehicle(VEHICLE_FILE, vehicle_data)
                         if success:
-                            # Generate QR Code
+                            # Generate QR Code OTOMATIS
                             qr_path = generate_qr_code(plat_nomor)
                             st.success(f"✅ Kendaraan {plat_nomor} berhasil ditambahkan!")
-                            st.info(f"📱 QR Code disimpan di: {qr_path}")
+                            st.success(f"✅ QR Code otomatis dibuat!")
                             
                             # Tampilkan QR Code
                             col1, col2 = st.columns([1, 2])
                             with col1:
                                 st.image(qr_path, caption=f"QR Code {plat_nomor}", width=200)
                             with col2:
-                                st.download_button(
-                                    label="📥 Download QR Code",
-                                    data=open(qr_path, 'rb').read(),
-                                    file_name=f"QR_{plat_nomor}.png",
-                                    mime="image/png"
-                                )
+                                st.info("📱 Scan QR Code ini dengan HP untuk melihat detail kendaraan")
+                                with open(qr_path, 'rb') as f:
+                                    st.download_button(
+                                        label="📥 Download QR Code",
+                                        data=f.read(),
+                                        file_name=f"QR_{plat_nomor}.png",
+                                        mime="image/png"
+                                    )
                         else:
                             st.error("❌ Gagal menambahkan kendaraan!")
                 else:
@@ -270,66 +275,139 @@ elif menu == 'Scan QR Code':
     st.title("📱 Scan QR Code Kendaraan")
     st.markdown("---")
     
-    tab1, tab2 = st.tabs(["🔍 Scan QR", "📝 Input Manual / Tambah Servis"])
+    tab1, tab2, tab3 = st.tabs(["📸 Upload & Scan QR", "🔍 Input Manual", "📝 Tambah Servis"])
     
+    # Tab 1: Upload & Scan QR
     with tab1:
-        st.subheader("Scan QR Code untuk Melihat Detail Kendaraan")
-        st.info("💡 Fitur scan webcam memerlukan izin kamera. Untuk demo, gunakan input manual di tab sebelah.")
+        st.subheader("📸 Scan QR Code dengan Upload Foto")
         
-        # Input manual plat nomor (sebagai alternatif scan)
-        plat_input = st.text_input("Masukkan Plat Nomor (Manual)", placeholder="B 1234 XYZ")
+        st.info("💡 **Cara Pakai:** Foto QR Code dengan HP → Upload di sini → Data kendaraan akan muncul otomatis!")
         
-        if st.button("🔍 Cari Kendaraan"):
-            if plat_input:
-                df_vehicles = load_data(VEHICLE_FILE)
+        # Upload image
+        uploaded_file = st.file_uploader(
+            "📤 Upload Foto QR Code",
+            type=['png', 'jpg', 'jpeg'],
+            help="Ambil foto QR Code kendaraan dengan HP, lalu upload di sini"
+        )
+        
+        if uploaded_file is not None:
+            # Tampilkan image yang diupload
+            col1, col2 = st.columns([1, 2])
+            
+            with col1:
+                st.image(uploaded_file, caption="QR Code yang diupload", width=250)
+            
+            with col2:
+                with st.spinner("🔍 Membaca QR Code..."):
+                    # Decode QR Code
+                    plat_nomor = decode_qr_from_image(uploaded_file)
+                    
+                    if plat_nomor:
+                        st.success(f"✅ QR Code berhasil dibaca: **{plat_nomor}**")
+                        st.session_state.scanned_plat = plat_nomor
+                    else:
+                        st.error("❌ Tidak dapat membaca QR Code. Pastikan foto jelas dan QR Code terlihat.")
+                        st.session_state.scanned_plat = None
+        
+        # Tampilkan data jika QR berhasil di-scan
+        if st.session_state.scanned_plat:
+            plat_nomor = st.session_state.scanned_plat
+            
+            st.markdown("---")
+            st.subheader(f"📋 Detail Kendaraan: {plat_nomor}")
+            
+            df_vehicles = load_data(VEHICLE_FILE)
+            
+            if not df_vehicles.empty and plat_nomor in df_vehicles['plat_nomor'].values:
+                vehicle = df_vehicles[df_vehicles['plat_nomor'] == plat_nomor].iloc[0]
                 
-                if not df_vehicles.empty and plat_input in df_vehicles['plat_nomor'].values:
-                    vehicle = df_vehicles[df_vehicles['plat_nomor'] == plat_input].iloc[0]
+                # Detail Kendaraan
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    st.metric("🚗 Merk", vehicle['merk'])
+                    st.metric("📦 Model", vehicle['model'])
+                
+                with col2:
+                    st.metric("📅 Tahun", vehicle['tahun'])
+                    st.metric("🎨 Warna", vehicle['warna'])
+                
+                with col3:
+                    st.metric("🏍️ Jenis", vehicle['jenis'])
+                    st.metric("🛣️ KM Terakhir", f"{vehicle['km_terakhir']:,} km")
+                
+                if vehicle['catatan']:
+                    st.info(f"📝 **Catatan:** {vehicle['catatan']}")
+                
+                st.markdown("---")
+                
+                # Riwayat Servis
+                st.subheader("🔧 Riwayat Servis")
+                
+                df_services = get_vehicle_services(SERVICE_FILE, plat_nomor)
+                
+                if not df_services.empty:
+                    # Statistik Servis
+                    col1, col2, col3 = st.columns(3)
                     
-                    st.success(f"✅ Kendaraan ditemukan: {plat_input}")
-                    
-                    col1, col2 = st.columns([1, 2])
+                    total_servis = len(df_services)
+                    total_biaya = df_services['biaya'].sum()
+                    avg_biaya = df_services['biaya'].mean()
                     
                     with col1:
-                        qr_path = f"qr/QR_{plat_input}.png"
-                        if os.path.exists(qr_path):
-                            st.image(qr_path, caption=f"QR Code {plat_input}", width=200)
-                    
+                        st.metric("Total Servis", total_servis)
                     with col2:
-                        st.subheader("Detail Kendaraan")
-                        st.write(f"**Plat Nomor:** {vehicle['plat_nomor']}")
-                        st.write(f"**Merk:** {vehicle['merk']}")
-                        st.write(f"**Model:** {vehicle['model']}")
-                        st.write(f"**Tahun:** {vehicle['tahun']}")
-                        st.write(f"**Jenis:** {vehicle['jenis']}")
-                        st.write(f"**Warna:** {vehicle['warna']}")
-                        st.write(f"**KM Terakhir:** {vehicle['km_terakhir']:,} km")
+                        st.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
+                    with col3:
+                        st.metric("Rata-rata Biaya", f"Rp {avg_biaya:,.0f}")
                     
                     st.markdown("---")
-                    st.subheader("📋 Riwayat Servis")
                     
-                    df_services = get_vehicle_services(SERVICE_FILE, plat_input)
+                    # Tabel Riwayat
+                    st.dataframe(
+                        df_services[['tanggal', 'km_saat_servis', 'jenis_servis', 'bengkel', 'biaya', 'teknisi']],
+                        use_container_width=True,
+                        height=300
+                    )
                     
-                    if not df_services.empty:
-                        st.dataframe(df_services, use_container_width=True)
-                        
-                        total_biaya = df_services['biaya'].sum()
-                        total_servis = len(df_services)
-                        
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.metric("Total Servis", total_servis)
-                        with col2:
-                            st.metric("Total Biaya", f"Rp {total_biaya:,.0f}")
-                    else:
-                        st.info("Belum ada riwayat servis untuk kendaraan ini")
+                    # Detail per servis (expandable)
+                    st.markdown("### 📄 Detail Servis")
+                    for idx, row in df_services.iterrows():
+                        with st.expander(f"🔧 {row['jenis_servis']} - {row['tanggal']}"):
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.write(f"**Tanggal:** {row['tanggal']}")
+                                st.write(f"**Jenis Servis:** {row['jenis_servis']}")
+                                st.write(f"**Bengkel:** {row['bengkel']}")
+                            with col2:
+                                st.write(f"**KM Saat Servis:** {row['km_saat_servis']:,} km")
+                                st.write(f"**Biaya:** Rp {row['biaya']:,.0f}")
+                                st.write(f"**Teknisi:** {row['teknisi']}")
+                            if row['keterangan']:
+                                st.write(f"**Keterangan:** {row['keterangan']}")
                 else:
-                    st.error(f"❌ Kendaraan dengan plat nomor {plat_input} tidak ditemukan!")
+                    st.info("📭 Belum ada riwayat servis untuk kendaraan ini")
+                
+            else:
+                st.error(f"❌ Kendaraan dengan plat nomor **{plat_nomor}** tidak ditemukan di database!")
+    
+    # Tab 2: Input Manual
+    with tab2:
+        st.subheader("🔍 Cari Kendaraan Manual")
+        st.info("💡 Jika tidak bisa scan QR, ketik plat nomor secara manual di sini")
+        
+        plat_input = st.text_input("Masukkan Plat Nomor", placeholder="B 1234 XYZ", key="manual_input")
+        
+        if st.button("🔍 Cari Kendaraan", use_container_width=True):
+            if plat_input:
+                st.session_state.scanned_plat = plat_input
+                st.rerun()
             else:
                 st.warning("⚠️ Masukkan plat nomor terlebih dahulu!")
     
-    with tab2:
-        st.subheader("Tambah Catatan Servis Baru")
+    # Tab 3: Tambah Servis
+    with tab3:
+        st.subheader("📝 Tambah Catatan Servis Baru")
         
         df_vehicles = load_data(VEHICLE_FILE)
         
@@ -338,7 +416,12 @@ elif menu == 'Scan QR Code':
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    plat_service = st.selectbox("Pilih Kendaraan *", df_vehicles['plat_nomor'].tolist())
+                    # Pre-fill jika sudah scan QR
+                    default_index = 0
+                    if st.session_state.scanned_plat and st.session_state.scanned_plat in df_vehicles['plat_nomor'].values:
+                        default_index = df_vehicles['plat_nomor'].tolist().index(st.session_state.scanned_plat)
+                    
+                    plat_service = st.selectbox("Pilih Kendaraan *", df_vehicles['plat_nomor'].tolist(), index=default_index)
                     tanggal = st.date_input("Tanggal Servis *", value=datetime.now())
                     km_saat_servis = st.number_input("Kilometer Saat Servis *", min_value=0, value=0)
                     jenis_servis = st.selectbox("Jenis Servis *", 
@@ -505,12 +588,14 @@ elif menu == 'Tentang Aplikasi':
         - QR Code akan otomatis dibuat
         """)
     
-    with st.expander("2️⃣ Scan QR & Lihat Detail"):
+    with st.expander("2️⃣ Scan QR dari HP"):
         st.write("""
+        - Buka aplikasi ini di **browser HP**
         - Buka menu **Scan QR Code**
-        - Input plat nomor kendaraan
-        - Klik **Cari Kendaraan**
-        - Detail dan riwayat servis akan ditampilkan
+        - Tab **Upload & Scan QR**
+        - Foto QR Code dengan kamera HP
+        - Upload foto di aplikasi
+        - Data kendaraan & riwayat servis akan **muncul otomatis**!
         """)
     
     with st.expander("3️⃣ Tambah Catatan Servis"):
