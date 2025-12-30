@@ -1,0 +1,6 @@
+id_servis,plat_nomor,tanggal,km_saat_servis,jenis_servis,bengkel,biaya,teknisi,keterangan
+SRV001,B 1234 XYZ,2024-01-20,15000,Ganti Oli,Bengkel Honda Resmi,150000,Budi,Ganti oli dan filter oli rutin
+SRV002,B 5678 ABC,2024-02-25,45000,Service Berkala,Bengkel Toyota Auto2000,850000,Andi,Service berkala 45000 km termasuk tune up
+SRV003,B 1234 XYZ,2024-03-15,16500,Ganti Ban,Toko Ban Jaya,450000,Rudi,Ganti ban belakang yang sudah botak
+SRV004,D 9999 DEF,2024-03-20,8000,Ganti Oli,Yamaha Service Center,180000,Agus,Ganti oli Yamalube dan cek rem
+SRV005,B 5678 ABC,2024-04-10,47000,Cuci Kendaraan,Car Wash Premium,75000,Tono,Cuci mobil lengkap termasuk interior
