@@ -169,25 +169,35 @@ elif menu == 'Data Kendaraan':
                             # Generate QR Code OTOMATIS
                             qr_path = generate_qr_code(plat_nomor)
                             st.success(f"✅ Kendaraan {plat_nomor} berhasil ditambahkan!")
-                            st.success(f"✅ QR Code otomatis dibuat!")
-                            
-                            # Tampilkan QR Code
-                            col1, col2 = st.columns([1, 2])
-                            with col1:
-                                st.image(qr_path, caption=f"QR Code {plat_nomor}", width=200)
-                            with col2:
-                                st.info("📱 Scan QR Code ini dengan HP untuk melihat detail kendaraan")
-                                with open(qr_path, 'rb') as f:
-                                    st.download_button(
-                                        label="📥 Download QR Code",
-                                        data=f.read(),
-                                        file_name=f"QR_{plat_nomor}.png",
-                                        mime="image/png"
-                                    )
+
+                            # Save QR info to session state so we can show/download
+                            # the file outside the `st.form` (download_button not allowed inside forms)
+                            st.session_state['last_added_plat'] = plat_nomor
+                            st.session_state['last_qr_path'] = qr_path
                         else:
                             st.error("❌ Gagal menambahkan kendaraan!")
                 else:
                     st.error(f"❌ {message}")
+
+        # If a vehicle was just added, show QR and download button outside the form
+        if 'last_qr_path' in st.session_state and st.session_state.get('last_qr_path'):
+            qr_path = st.session_state['last_qr_path']
+            plat = st.session_state.get('last_added_plat', '')
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                st.image(qr_path, caption=f"QR Code {plat}", width=200)
+            with col2:
+                st.info("📱 Scan QR Code ini dengan HP untuk melihat detail kendaraan")
+                try:
+                    with open(qr_path, 'rb') as f:
+                        st.download_button(
+                            label="📥 Download QR Code",
+                            data=f.read(),
+                            file_name=f"QR_{plat}.png",
+                            mime="image/png"
+                        )
+                except Exception as e:
+                    st.error("Gagal menampilkan file QR: " + str(e))
     
     # Tab 3: Edit Kendaraan
     with tab3:

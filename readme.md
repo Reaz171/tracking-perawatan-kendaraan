@@ -229,17 +229,6 @@ http://localhost:8501
 
 ---
 
-## 👥 Pembagian Tugas (Contoh untuk Tim)
-
-| Nama | NIM | Tugas |
-|------|-----|-------|
-| Anggota 1 | 123456 | UI/UX Design, Dashboard |
-| Anggota 2 | 123457 | CRUD Functions, Data Management |
-| Anggota 3 | 123458 | QR Code Integration |
-| Anggota 4 | 123459 | Grafik & Laporan, Export Excel |
-
----
-
 ## 📝 Catatan Penting
 
 1. **Data Storage**: Semua data disimpan di folder `data/` dalam format CSV
@@ -249,40 +238,12 @@ http://localhost:8501
 
 ---
 
-## 🔮 Pengembangan Selanjutnya
-
-- [ ] Fitur login user
-- [ ] Backup otomatis data
-- [ ] Notifikasi jadwal servis
-- [ ] Scan QR via webcam real-time
-- [ ] Multi-user support
-- [ ] Mobile responsive optimization
-- [ ] Dark mode theme
-
----
-
-## 📄 Lisensi
-
 Proyek ini dibuat untuk tugas **Pemrograman Terstruktur** - Program Studi Teknologi Informasi
 
----
 
-## 📞 Kontak
-
-Untuk pertanyaan atau saran, silakan hubungi:
-- Email: mahasiswa@university.ac.id
-- GitHub Issues: [Link Issues](https://github.com/username/tracking-perawatan-kendaraan/issues)
-
----
-
-## 🙏 Acknowledgments
-
-- Dosen Pengampu: [Nama Dosen]
+- Dosen Pengampu: Budi Sutomo S.
 - Mata Kuliah: Pemrograman Terstruktur
-- Universitas: [Nama Universitas]
+- Universitas: Universitas Dharma Wacana
 - Tahun Akademik: 2024/2025
 
----
-
-**⭐ Jika proyek ini bermanfaat, jangan lupa berikan star!**
 

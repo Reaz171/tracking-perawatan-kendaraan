@@ -1,5 +1,8 @@
 plat_nomor,merk,model,tahun,jenis,warna,km_terakhir,catatan,tanggal_daftar
-B 1234 XYZ,Honda,Beat,2020,Motor,Hitam,15000,service mesin,2024-01-15 10:30:00
-B 5678 ABC,Toyota,Avanza,2019,Mobil,Silver,45000,Mobil keluarga,2024-02-20 14:15:00
+B 5678 ABC,Toyota,Avanza,2019,Mobil,Silver,0,Mobil keluarga,2024-02-20 14:15:00
 D 9999 DEF,Yamaha,NMAX,2021,Motor,Biru,8000,Motor touring,2024-03-10 09:00:00
-B 1234 BH,YAMAHA,Beat,2020,Motor,Putih,1500,ganti kampas rem,2025-12-16 12:11:22
+B 1234 BH,YAMAHA,Beat,2020,Motor,Putih,2000,ganti kampas rem,2025-12-16 12:11:22
+B 1212 KYK,Honda,Beat,2023,Motor,Hitam,1000,,2025-12-30 20:02:02
+B 1245 KYK,Honda,Beat,2023,Motor,Hitam,1000,,2025-12-30 20:02:18
+y 7878 iuii,honda,cbr 150,2020,Motor,,12354,motor balap,2026-01-17 13:56:01
+L 4 NY,yamaha,NMAX,2018,Motor,emas,3654,,2026-01-17 14:07:28
